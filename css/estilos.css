@@ -858,3 +858,47 @@ footer p{ font-size:11.5px; line-height:1.6; }
   .graficos{ grid-template-columns:1fr; }
   .wrap{ padding:0; }
 }
+
+/* ============================================================
+   TOOLTIP DO MAPA (ao passar o mouse)
+   ============================================================
+   A tooltip mostra até três informações: nome, situação e o
+   número que sustenta essa situação. Precisa caber em poucas
+   linhas e ser lida sem esforço, porque aparece e desaparece
+   com o movimento do mouse.
+   ============================================================ */
+
+.leaflet-tooltip{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  font-size:12px; line-height:1.45;
+  padding:8px 11px; border-radius:3px;
+  border:1px solid var(--line);
+  box-shadow:0 3px 12px rgba(28,43,58,.16);
+  max-width:290px; white-space:normal;
+}
+
+.leaflet-tooltip b{
+  font-family:"Iowan Old Style","Georgia",serif;
+  font-size:13.5px; color:var(--navy);
+}
+
+/* Etiqueta da situação: mesma cor do município no mapa, para o
+   olho ligar imediatamente a tooltip à cor que está vendo. */
+.tt-situacao{
+  display:inline-block; margin-top:3px;
+  font-size:10px; font-weight:700;
+  letter-spacing:.04em; text-transform:uppercase;
+  padding:1px 6px; border-radius:2px;
+}
+
+.tt-nao_paga{ background:var(--err-bg); color:var(--err); }
+.tt-paga{ background:var(--ok-bg); color:var(--ok); }
+.tt-sem_dado{ background:var(--warn-bg); color:var(--warn); }
+
+.tt-linha{
+  display:block; margin-top:3px;
+  font-size:11.5px; color:var(--ink);
+  font-variant-numeric:tabular-nums;
+}
+
+.tt-fraco{ color:var(--ink-dim); font-size:11.5px; }
