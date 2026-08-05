@@ -3,177 +3,223 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mapa — Piso do Magistério nos Municípios do Paraná</title>
+  <title>Piso do Magistério nos Municípios do Paraná — APP Sindicato</title>
 
-  <!-- 
-    ============================================================
-    FOLHA DE ESTILO DO LEAFLET (biblioteca de mapas)
-    ============================================================
-    O Leaflet é uma biblioteca (código pronto) de outras pessoas
-    que desenha mapas interativos. Precisamos do CSS deles para
-    que o mapa tenha aparência correta (popups, controles de zoom,
-    etc.).
-
-    unpkg.com é um site que distribui bibliotecas gratuitamente.
-    O @1.9.4 é a versão — versões maiores podem ter mudanças
-    que quebram seu código, por isso fixamos a versão.
-  -->
+  <!-- Folha de estilo do Leaflet (biblioteca do mapa) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-  <!-- 
-    ============================================================
-    NOSSA FOLHA DE ESTILO
-    ============================================================
-    Este é o CSS que VOCÊ escreveu — cores, fontes, espaçamentos,
-    tamanhos. Fica em arquivo separado para o navegador poder
-    "memorizar" (cache) e não precisar baixar de novo.
-  -->
+  <!-- Nossa folha de estilo -->
   <link rel="stylesheet" href="css/estilos.css" />
 </head>
 <body>
 
   <!-- ============================================================
        CABEÇALHO
-       ============================================================
-       Aqui ficam: título, descrição e o badge de status.
-       O badge muda de cor conforme os dados carregam.
-  -->
+       ============================================================ -->
   <header>
-    <h1>Mapa — Piso do Magistério nos Municípios do Paraná</h1>
-    <p>Visão geográfica da conformidade com o piso do magistério (Lei nº 11.738/2008) · APP Sindicato</p>
-    <span class="badge" id="sync-badge">🔄 carregando…</span>
+    <div class="header-linha">
+      <div class="header-texto">
+        <p class="eyebrow">APP Sindicato · Levantamento de conformidade</p>
+        <h1>Piso do Magistério nos Municípios do Paraná</h1>
+        <p class="header-sub">
+          Verificação do cumprimento do piso salarial do magistério (Lei nº 11.738/2008)
+          na legislação municipal e na folha de pagamento efetivamente praticada.
+        </p>
+      </div>
+      <span class="badge" id="sync-badge">🔄 carregando…</span>
+    </div>
   </header>
 
-  <!-- 
-    Banner de aviso (só aparece quando há problema).
-    Inicialmente escondido (display:none no CSS).
-  -->
+  <!-- Banner de aviso/erro (só aparece quando há problema) -->
   <div id="config-banner"></div>
 
-  <!-- ============================================================
-       CONTEÚDO PRINCIPAL
-       ============================================================ -->
   <div class="wrap">
 
-    <!-- Estatísticas (4 caixinhas no topo) -->
-    <div class="stats">
-      <div class="stat">
-        <b id="st-paga" style="color:var(--ok)">0</b>
-        <span>Pagam o piso</span>
+    <!-- ============================================================
+         1. O QUE A CLASSE ESTÁ DEIXANDO DE RECEBER
+         ============================================================ -->
+    <section class="secao secao-perdas">
+      <div class="secao-cabeca">
+        <h2>O que a classe está deixando de receber</h2>
+        <span class="secao-marca">auditoria de folha · exercício 2025</span>
       </div>
-      <div class="stat">
-        <b id="st-naopaga" style="color:var(--err)">0</b>
-        <span>Não pagam o piso</span>
+      <p class="secao-desc">
+        Os valores abaixo não são projeção nem amostragem. Resultam da comparação, lançamento por
+        lançamento, entre o que foi efetivamente pago a cada profissional em cada mês e o piso
+        proporcional à sua carga horária.
+      </p>
+
+      <!-- Preenchido por graficos.js -->
+      <div id="painel-perdas" class="painel-perdas"></div>
+    </section>
+
+    <!-- ============================================================
+         2. CONTROLES
+         ============================================================ -->
+    <section class="secao secao-controles">
+      <div class="secao-cabeca">
+        <h2>Recorte da consulta</h2>
+        <span class="secao-marca">filtros aplicam a tudo na página</span>
       </div>
-      <div class="stat">
-        <b id="st-semdado" style="color:var(--warn)">0</b>
-        <span>Acompanhados, sem dado ainda</span>
-      </div>
-      <div class="stat">
-        <b id="st-fora" style="color:var(--ink-dim)">0</b>
-        <span>Fora do escopo</span>
-      </div>
-    </div>
 
-    <!-- Barra de controles: ano, núcleo, situação e ações -->
-    <div class="controles">
-      <label class="campo">
-        <span>Ano de referência</span>
-        <select id="f-ano"></select>
-      </label>
+      <div class="controles">
+        <label class="campo">
+          <span>Ano de referência</span>
+          <select id="f-ano"></select>
+        </label>
 
-      <label class="campo">
-        <span>Núcleo sindical</span>
-        <select id="f-nucleo">
-          <option value="">Todos os núcleos</option>
-        </select>
-      </label>
+        <label class="campo">
+          <span>Núcleo sindical</span>
+          <select id="f-nucleo">
+            <option value="">Todos os núcleos</option>
+          </select>
+        </label>
 
-      <label class="campo">
-        <span>Situação</span>
-        <select id="f-situacao">
-          <option value="">Todas as situações</option>
-          <option value="nao_paga">Não paga o piso</option>
-          <option value="paga">Paga o piso</option>
-          <option value="sem_dado">Sem dado levantado</option>
-        </select>
-      </label>
+        <label class="campo">
+          <span>Situação</span>
+          <select id="f-situacao">
+            <option value="">Todas as situações</option>
+            <option value="nao_paga">Não paga o piso</option>
+            <option value="paga">Paga o piso</option>
+            <option value="sem_dado">Sem dado levantado</option>
+          </select>
+        </label>
 
-      <div class="acoes">
-        <button type="button" id="btn-limpar" class="btn">Limpar filtros</button>
-        <button type="button" id="btn-csv" class="btn">Baixar CSV</button>
-        <button type="button" id="btn-atualizar" class="btn btn-primario">Atualizar dados</button>
-      </div>
-    </div>
+        <label class="campo campo-busca">
+          <span>Buscar</span>
+          <input type="text" id="resumo-busca" placeholder="Município ou núcleo…">
+        </label>
 
-    <p class="nota-metodo">
-      A situação usa o último ano com valor preenchido até o ano escolhido. A partir de
-      2025, quando há auditoria de folha de pagamento, ela prevalece sobre a lei publicada.
-    </p>
-
-    <!-- Mapa -->
-    <div class="map-shell">
-      <div id="map"></div>
-    </div>
-
-    <!-- Tabela de resumo -->
-    <div id="resumo">
-      <div class="resumo-head">
-        <div>
-          <h2>Resumo dos municípios acompanhados</h2>
-          <div class="resumo-sub" id="resumo-contagem">carregando…</div>
+        <div class="acoes">
+          <button type="button" class="btn" id="btn-limpar">Limpar filtros</button>
+          <button type="button" class="btn" id="btn-csv">Baixar CSV</button>
+          <button type="button" class="btn btn-primario" id="btn-atualizar">Atualizar dados</button>
         </div>
-        <input type="text" id="resumo-busca" placeholder="Buscar município...">
       </div>
-      <div class="resumo-tbl-wrap">
-        <table class="resumo-tbl">
-          <thead>
-            <tr>
-              <th>Município</th>
-              <th>Núcleo</th>
-              <th>Situação</th>
-              <th>Valor praticado</th>
-              <th>Piso do ano</th>
-              <th>Diferença</th>
-              <th>Observação</th>
-            </tr>
-          </thead>
-          <tbody id="resumo-tbody"></tbody>
-        </table>
+
+      <p class="nota-metodo">
+        A situação usa o último ano com valor preenchido até o ano escolhido. A partir de 2025,
+        quando existe auditoria de folha de pagamento, ela prevalece sobre a lei publicada — porque
+        demonstra o que foi de fato pago, não o que a norma determina.
+      </p>
+    </section>
+
+    <!-- ============================================================
+         3. MAPA
+         ============================================================ -->
+    <section class="secao">
+      <div class="secao-cabeca">
+        <h2>Distribuição no estado</h2>
+        <span class="secao-marca">clique num município para o detalhe</span>
       </div>
-    </div>
+
+      <!-- Cobertura do levantamento: contexto do mapa, não indicador de perda -->
+      <div class="stats">
+        <div class="stat">
+          <b id="st-paga">0</b>
+          <span>Pagam o piso</span>
+        </div>
+        <div class="stat">
+          <b id="st-naopaga">0</b>
+          <span>Não pagam o piso</span>
+        </div>
+        <div class="stat">
+          <b id="st-semdado">0</b>
+          <span>Acompanhados, sem dado ainda</span>
+        </div>
+        <div class="stat">
+          <b id="st-fora">0</b>
+          <span>Fora do escopo</span>
+        </div>
+      </div>
+
+      <div class="map-shell">
+        <div id="map"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         4. TABELA — CASOS MAIS RELEVANTES PRIMEIRO
+         ============================================================ -->
+    <section class="secao">
+      <div id="resumo">
+        <div class="resumo-head">
+          <div>
+            <h2>Municípios acompanhados, por ordem de gravidade</h2>
+            <div class="resumo-sub" id="resumo-contagem">carregando…</div>
+          </div>
+        </div>
+
+        <p class="resumo-legenda">
+          A lista começa pelos municípios com perda apurada em folha de pagamento, do maior valor
+          para o menor — é onde a atuação tem lastro documental mais forte. Depois vêm os que a lei
+          municipal já fixa abaixo do piso, os que ainda não têm valor levantado e, por último, os
+          que estão em conformidade. A barra sob o valor mostra a proporção dos lançamentos de folha
+          que ficaram abaixo do piso: proporção alta indica tabela de vencimentos defasada;
+          proporção baixa indica falha em poucos contratos.
+        </p>
+
+        <div class="resumo-tbl-wrap">
+          <table class="resumo-tbl">
+            <thead>
+              <tr>
+                <th class="col-pos" scope="col"><span class="sr-only">Ordem de prioridade</span></th>
+                <th scope="col">Município</th>
+                <th scope="col">Situação</th>
+                <th scope="col">Perda apurada em folha</th>
+                <th scope="col">Prof. atingidos</th>
+                <th scope="col">Praticado em lei</th>
+                <th scope="col">O que foi verificado</th>
+              </tr>
+            </thead>
+            <tbody id="resumo-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         5. GRÁFICOS
+         ============================================================ -->
+    <section class="secao">
+      <div class="secao-cabeca">
+        <h2>Visualização das perdas</h2>
+        <span class="secao-marca">responde aos filtros acima</span>
+      </div>
+      <p class="secao-desc">
+        Quatro leituras do mesmo levantamento. Cada uma responde a uma pergunta diferente:
+        onde o valor total é maior, onde há mais gente atingida, onde o prejuízo individual é
+        mais severo e como isso se distribui entre os núcleos do sindicato.
+      </p>
+
+      <!-- Preenchido por graficos.js -->
+      <div id="graficos" class="graficos"></div>
+    </section>
+
   </div>
 
-  <!-- Rodapé -->
+  <!-- ============================================================
+       RODAPÉ
+       ============================================================ -->
   <footer>
     <p>
-      Clique em qualquer município (no mapa ou na tabela) para ver os dados já levantados pela pesquisa.
-      Municípios em cinza claro não fazem parte do escopo. Os valores praticados são os fixados em lei
-      municipal para a jornada de referência; a auditoria de folha compara mês a mês o efetivamente pago.
+      Os valores praticados são os fixados em lei municipal para a jornada de referência.
+      A auditoria de folha compara mês a mês o efetivamente pago com o piso proporcional
+      à carga horária de cada profissional, e cada valor apurado pode ser reconstituído
+      a partir dos relatórios individuais por município.
     </p>
-    <p id="ultima-sync" class="sync-stamp"></p>
+    <p class="sync-stamp" id="ultima-sync"></p>
   </footer>
 
   <!-- ============================================================
-       SCRIPTS (JavaScript)
-       ============================================================
-       ORDEM É IMPORTANTE! Cada arquivo depende do anterior:
-       1. Leaflet (biblioteca externa) — precisa vir primeiro
-       2. config.js — define constantes usadas por todos
-       3. util.js — funções auxiliares usadas por dados, mapa, resumo
-       4. dados.js — busca e organiza dados (usa util.js)
-       5. mapa.js — desenha o mapa (usa dados.js e util.js)
-       6. resumo.js — desenha a tabela (usa dados.js e util.js)
-       7. main.js — orquestra tudo (usa todos os anteriores)
-
-       Se mudar a ordem, o navegador tenta usar algo que ainda
-       não foi carregado, e dá erro.
-  -->
+       SCRIPTS — a ordem importa: cada um depende dos anteriores
+       ============================================================ -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="js/config.js"></script>
   <script src="js/util.js"></script>
   <script src="js/dados.js"></script>
   <script src="js/mapa.js"></script>
+  <script src="js/graficos.js"></script>
   <script src="js/resumo.js"></script>
   <script src="js/main.js"></script>
 
