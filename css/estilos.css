@@ -1,0 +1,497 @@
+/* ============================================================
+   ESTILOS.CSS
+   ============================================================
+   O que é CSS? É como a "pintura e decoração" do site.
+   Aqui definimos: cores, tamanhos, espaçamentos, fontes,
+   bordas arredondadas, sombras... tudo que o olho vê.
+
+   Pense no HTML como a estrutura de uma casa (paredes, portas),
+   e o CSS como a decoração (cor das paredes, tipo de porta,
+   iluminação). Sem CSS, o site fica feio e sem graça.
+   ============================================================ */
+
+/* --- VARIÁVEIS DE CORES --- */
+/* 
+   "Variáveis" são apelidos que damos para valores que usamos
+   muitas vezes. Em vez de escrever "#1c2b3a" toda hora,
+   escrevemos "var(--navy)". Se quiser mudar a cor depois,
+   muda só aqui e todo o site atualiza!
+*/
+:root{
+  --navy:#1c2b3a;
+  --navy-dark:#101c28;
+  --amber:#b5651d;
+  --paper:#faf8f4;
+  --paper-dim:#f0ece3;
+  --line:#dcd5c6;
+  --ink:#1c2b3a;
+  --ink-dim:#5b6572;
+  --ok:#2f6b3a; --ok-bg:#eaf3e8; --ok-bd:#c3ddc0;
+  --warn:#9a6b16; --warn-bg:#fbf1de; --warn-bd:#e9d3a0;
+  --err:#a3312a; --err-bg:#fbeae8; --err-bd:#eec6c1;
+  --pend:#5b6572; --pend-bg:#f0ece3; --pend-bd:#dcd5c6;
+  --igual:#274d7a; --igual-bg:#e7eef7; --igual-bd:#c7d6e8;
+}
+
+/* --- RESET BÁSICO --- */
+/* 
+   Todo navegador tem estilos "padrão" diferentes.
+   Isso padroniza: a caixa de tudo inclui borda e padding
+   no tamanho total, e remove margens padrão do body.
+*/
+*{box-sizing:border-box;}
+
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  font-size:14px;
+  line-height:1.5;
+}
+
+/* Classe para usar fonte serifada (mais elegante) em títulos */
+.serif{ font-family:"Iowan Old Style","Georgia",serif; }
+
+/* --- CABEÇALHO --- */
+header{
+  background:var(--navy);
+  color:#f2ede2;
+  padding:20px 28px 18px;
+  border-bottom:4px solid var(--amber);
+}
+
+header h1{
+  margin:0 0 4px;
+  font-size:21px;
+  font-weight:600;
+  letter-spacing:.2px;
+  font-family:"Iowan Old Style","Georgia",serif;
+}
+
+header p{
+  margin:0;
+  font-size:12.5px;
+  color:#c7cfd8;
+}
+
+header .badge{
+  display:inline-block;
+  margin-top:10px;
+  font-size:11px;
+  padding:3px 9px;
+  border-radius:20px;
+  background:rgba(181,101,29,.25);
+  border:1px solid rgba(181,101,29,.55);
+  color:#f4e3d3;
+}
+
+/* --- BANNER DE AVISO --- */
+#config-banner{
+  background:var(--warn-bg);
+  border-bottom:1px solid var(--warn-bd);
+  color:var(--warn);
+  padding:12px 24px;
+  font-size:13px;
+  display:none;
+}
+
+#config-banner code{
+  background:rgba(0,0,0,.06);
+  padding:1px 5px;
+  border-radius:4px;
+}
+
+/* --- CONTAINER PRINCIPAL --- */
+.wrap{
+  max-width:1180px;
+  margin:0 auto;
+  padding:20px 24px 60px;
+}
+
+/* --- ESTATÍSTICAS (4 caixinhas no topo) --- */
+.stats{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-bottom:16px;
+}
+
+.stat{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:6px;
+  padding:12px 14px;
+  text-align:center;
+}
+
+.stat b{
+  display:block;
+  font-size:22px;
+  font-weight:700;
+}
+
+.stat span{
+  font-size:11px;
+  color:var(--ink-dim);
+  text-transform:uppercase;
+  letter-spacing:.4px;
+}
+
+/* --- SELETOR DE ANO --- */
+.ano-toggle{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:12px;
+  font-size:12.5px;
+  flex-wrap:wrap;
+}
+
+.ano-toggle select{
+  font-size:13px;
+  padding:6px 9px;
+  border:1px solid var(--line);
+  border-radius:6px;
+  background:#fff;
+}
+
+/* --- MAPA --- */
+.map-shell{
+  position:relative;
+  border:1px solid var(--line);
+  border-radius:8px;
+  overflow:hidden;
+  box-shadow:0 2px 6px rgba(0,0,0,.06);
+}
+
+#map{
+  height:600px;
+  width:100%;
+}
+
+/* --- LEGENDA DO MAPA --- */
+.legend{
+  background:rgba(255,255,255,.95);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:10px 12px;
+  font-size:11.5px;
+  line-height:1.7;
+  box-shadow:0 2px 6px rgba(0,0,0,.08);
+}
+
+.legend .dot{
+  display:inline-block;
+  width:10px;
+  height:10px;
+  border-radius:3px;
+  margin-right:6px;
+  vertical-align:middle;
+}
+
+/* --- PILLS (etiquetas coloridas) --- */
+.pill{
+  font-size:10.5px;
+  font-weight:600;
+  padding:2px 8px;
+  border-radius:5px;
+  display:inline-block;
+  white-space:nowrap;
+}
+
+/* --- POPUP (balão ao clicar no município) --- */
+.leaflet-popup-content-wrapper{ border-radius:10px; }
+.leaflet-popup-content{
+  margin:14px 16px;
+  width:290px !important;
+}
+
+.popup-body{
+  font-family:-apple-system,sans-serif;
+  max-height:340px;
+  overflow-y:auto;
+}
+
+.popup-body h3{
+  margin:0 0 2px;
+  font-family:"Iowan Old Style","Georgia",serif;
+  font-size:17px;
+  color:var(--navy);
+}
+
+.popup-body .sub{
+  color:var(--ink-dim);
+  font-size:11.5px;
+  margin-bottom:8px;
+}
+
+.popup-body .obs-box{
+  margin:6px 0;
+  padding:8px;
+  border-radius:6px;
+  font-size:12px;
+  line-height:1.45;
+}
+
+.popup-body table.anos-mini{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:8px;
+}
+
+.popup-body table.anos-mini th{
+  text-align:left;
+  font-size:9.5px;
+  text-transform:uppercase;
+  color:var(--ink-dim);
+  padding:4px 6px;
+  border-bottom:1px solid var(--line);
+}
+
+.popup-body table.anos-mini td{
+  padding:5px 6px;
+  border-bottom:1px solid var(--line);
+  font-size:12px;
+}
+
+.popup-body .fonte-link{
+  color:var(--navy);
+  font-size:11.5px;
+}
+
+.popup-body .detalhe-discreto{
+  font-size:10.5px;
+  color:var(--ink-dim);
+  margin-top:6px;
+}
+
+/* --- RESUMO (tabela abaixo do mapa) --- */
+#resumo{
+  margin-top:18px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:8px;
+  overflow:hidden;
+}
+
+#resumo .resumo-head{
+  padding:14px 18px;
+  border-bottom:1px solid var(--line);
+  background:var(--paper-dim);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+#resumo .resumo-head h2{
+  margin:0;
+  font-family:"Iowan Old Style","Georgia",serif;
+  font-size:16px;
+}
+
+#resumo .resumo-head .resumo-sub{
+  font-size:11.5px;
+  color:var(--ink-dim);
+}
+
+#resumo input#resumo-busca{
+  font-size:12.5px;
+  padding:6px 10px;
+  border:1px solid var(--line);
+  border-radius:6px;
+  width:200px;
+}
+
+.resumo-tbl-wrap{
+  max-height:420px;
+  overflow-y:auto;
+}
+
+table.resumo-tbl{
+  width:100%;
+  border-collapse:collapse;
+}
+
+table.resumo-tbl thead th{
+  position:sticky;
+  top:0;
+  background:#fff;
+  text-align:left;
+  font-size:10.5px;
+  text-transform:uppercase;
+  letter-spacing:.4px;
+  color:var(--ink-dim);
+  padding:8px 14px;
+  border-bottom:2px solid var(--line);
+}
+
+table.resumo-tbl tbody td{
+  padding:8px 14px;
+  border-bottom:1px solid var(--line);
+  font-size:12.5px;
+  vertical-align:top;
+}
+
+table.resumo-tbl tbody tr:hover{
+  background:var(--paper-dim);
+  cursor:pointer;
+}
+
+table.resumo-tbl .obs-cell{
+  color:var(--ink-dim);
+  font-size:12px;
+  max-width:340px;
+}
+
+table.resumo-tbl .valor-cell{
+  white-space:nowrap;
+  font-weight:600;
+}
+
+/* --- RODAPÉ --- */
+footer{
+  text-align:center;
+  font-size:11px;
+  color:var(--ink-dim);
+  padding:20px;
+}
+
+/* ============================================================
+   ADIÇÕES — BARRA DE CONTROLES, COLUNAS DE PISO E RESPONSIVO
+   ============================================================ */
+
+/* --- BARRA DE CONTROLES (ano, núcleo, situação, botões) --- */
+.controles{
+  display:flex;
+  align-items:flex-end;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:8px;
+}
+
+.controles .campo{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+.controles .campo span{
+  font-size:10.5px;
+  text-transform:uppercase;
+  letter-spacing:.4px;
+  color:var(--ink-dim);
+}
+
+.controles select{
+  font-size:13px;
+  padding:6px 9px;
+  border:1px solid var(--line);
+  border-radius:6px;
+  background:#fff;
+  color:var(--ink);
+  min-width:170px;
+}
+
+.controles .acoes{
+  display:flex;
+  gap:8px;
+  margin-left:auto;
+  flex-wrap:wrap;
+}
+
+.btn{
+  font-size:12.5px;
+  font-family:inherit;
+  padding:7px 13px;
+  border:1px solid var(--line);
+  border-radius:6px;
+  background:#fff;
+  color:var(--ink);
+  cursor:pointer;
+}
+
+.btn:hover{ background:var(--paper-dim); }
+.btn:disabled{ opacity:.55; cursor:progress; }
+
+.btn:focus-visible,
+.controles select:focus-visible,
+#resumo input#resumo-busca:focus-visible{
+  outline:2px solid var(--amber);
+  outline-offset:2px;
+}
+
+.btn-primario{
+  background:var(--navy);
+  border-color:var(--navy);
+  color:#f2ede2;
+}
+
+.btn-primario:hover{ background:var(--navy-dark); }
+
+/* --- NOTA METODOLÓGICA --- */
+.nota-metodo{
+  margin:0 0 14px;
+  font-size:11.5px;
+  color:var(--ink-dim);
+  max-width:760px;
+}
+
+/* --- CAIXA DE COMPARAÇÃO NO POPUP (piso × praticado) --- */
+.piso-box{
+  margin:8px 0;
+  padding:8px 10px;
+  border:1px solid var(--line);
+  border-radius:6px;
+  background:var(--paper);
+}
+
+.piso-linha{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  font-size:12px;
+  padding:2px 0;
+}
+
+.piso-linha span{ color:var(--ink-dim); }
+.piso-linha b{ font-variant-numeric:tabular-nums; }
+
+/* --- COLUNAS NUMÉRICAS DA TABELA --- */
+table.resumo-tbl .valor-cell{ font-variant-numeric:tabular-nums; }
+table.resumo-tbl .piso-cell{ font-weight:400; color:var(--ink-dim); }
+
+table.resumo-tbl .nota-ano{
+  font-weight:400;
+  color:var(--ink-dim);
+  font-size:11px;
+}
+
+table.resumo-tbl td.vazio{
+  padding:26px 14px;
+  text-align:center;
+  color:var(--ink-dim);
+}
+
+/* --- CARIMBO DE SINCRONIZAÇÃO NO RODAPÉ --- */
+footer p{ margin:0 auto 6px; max-width:820px; }
+.sync-stamp{ color:var(--ink-dim); font-size:10.5px; }
+
+/* --- TELAS ESTREITAS --- */
+@media (max-width:820px){
+  .stats{ grid-template-columns:repeat(2,1fr); }
+  .controles .acoes{ margin-left:0; width:100%; }
+  .controles select{ min-width:0; width:100%; }
+  .controles .campo{ flex:1 1 45%; }
+  #map{ height:420px; }
+  #resumo input#resumo-busca{ width:100%; }
+  .resumo-tbl-wrap{ overflow-x:auto; }
+  table.resumo-tbl{ min-width:780px; }
+}
+
+/* --- ACESSIBILIDADE: respeitar preferência por menos movimento --- */
+@media (prefers-reduced-motion:reduce){
+  *{ scroll-behavior:auto !important; }
+}

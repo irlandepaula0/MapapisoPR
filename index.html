@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapa — Piso do Magistério nos Municípios do Paraná</title>
+
+  <!-- 
+    ============================================================
+    FOLHA DE ESTILO DO LEAFLET (biblioteca de mapas)
+    ============================================================
+    O Leaflet é uma biblioteca (código pronto) de outras pessoas
+    que desenha mapas interativos. Precisamos do CSS deles para
+    que o mapa tenha aparência correta (popups, controles de zoom,
+    etc.).
+
+    unpkg.com é um site que distribui bibliotecas gratuitamente.
+    O @1.9.4 é a versão — versões maiores podem ter mudanças
+    que quebram seu código, por isso fixamos a versão.
+  -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- 
+    ============================================================
+    NOSSA FOLHA DE ESTILO
+    ============================================================
+    Este é o CSS que VOCÊ escreveu — cores, fontes, espaçamentos,
+    tamanhos. Fica em arquivo separado para o navegador poder
+    "memorizar" (cache) e não precisar baixar de novo.
+  -->
+  <link rel="stylesheet" href="css/estilos.css" />
+</head>
+<body>
+
+  <!-- ============================================================
+       CABEÇALHO
+       ============================================================
+       Aqui ficam: título, descrição e o badge de status.
+       O badge muda de cor conforme os dados carregam.
+  -->
+  <header>
+    <h1>Mapa — Piso do Magistério nos Municípios do Paraná</h1>
+    <p>Visão geográfica da conformidade com o piso do magistério (Lei nº 11.738/2008) · APP Sindicato</p>
+    <span class="badge" id="sync-badge">🔄 carregando…</span>
+  </header>
+
+  <!-- 
+    Banner de aviso (só aparece quando há problema).
+    Inicialmente escondido (display:none no CSS).
+  -->
+  <div id="config-banner"></div>
+
+  <!-- ============================================================
+       CONTEÚDO PRINCIPAL
+       ============================================================ -->
+  <div class="wrap">
+
+    <!-- Estatísticas (4 caixinhas no topo) -->
+    <div class="stats">
+      <div class="stat">
+        <b id="st-paga" style="color:var(--ok)">0</b>
+        <span>Pagam o piso</span>
+      </div>
+      <div class="stat">
+        <b id="st-naopaga" style="color:var(--err)">0</b>
+        <span>Não pagam o piso</span>
+      </div>
+      <div class="stat">
+        <b id="st-semdado" style="color:var(--warn)">0</b>
+        <span>Acompanhados, sem dado ainda</span>
+      </div>
+      <div class="stat">
+        <b id="st-fora" style="color:var(--ink-dim)">0</b>
+        <span>Fora do escopo</span>
+      </div>
+    </div>
+
+    <!-- Barra de controles: ano, núcleo, situação e ações -->
+    <div class="controles">
+      <label class="campo">
+        <span>Ano de referência</span>
+        <select id="f-ano"></select>
+      </label>
+
+      <label class="campo">
+        <span>Núcleo sindical</span>
+        <select id="f-nucleo">
+          <option value="">Todos os núcleos</option>
+        </select>
+      </label>
+
+      <label class="campo">
+        <span>Situação</span>
+        <select id="f-situacao">
+          <option value="">Todas as situações</option>
+          <option value="nao_paga">Não paga o piso</option>
+          <option value="paga">Paga o piso</option>
+          <option value="sem_dado">Sem dado levantado</option>
+        </select>
+      </label>
+
+      <div class="acoes">
+        <button type="button" id="btn-limpar" class="btn">Limpar filtros</button>
+        <button type="button" id="btn-csv" class="btn">Baixar CSV</button>
+        <button type="button" id="btn-atualizar" class="btn btn-primario">Atualizar dados</button>
+      </div>
+    </div>
+
+    <p class="nota-metodo">
+      A situação usa o último ano com valor preenchido até o ano escolhido. A partir de
+      2025, quando há auditoria de folha de pagamento, ela prevalece sobre a lei publicada.
+    </p>
+
+    <!-- Mapa -->
+    <div class="map-shell">
+      <div id="map"></div>
+    </div>
+
+    <!-- Tabela de resumo -->
+    <div id="resumo">
+      <div class="resumo-head">
+        <div>
+          <h2>Resumo dos municípios acompanhados</h2>
+          <div class="resumo-sub" id="resumo-contagem">carregando…</div>
+        </div>
+        <input type="text" id="resumo-busca" placeholder="Buscar município...">
+      </div>
+      <div class="resumo-tbl-wrap">
+        <table class="resumo-tbl">
+          <thead>
+            <tr>
+              <th>Município</th>
+              <th>Núcleo</th>
+              <th>Situação</th>
+              <th>Valor praticado</th>
+              <th>Piso do ano</th>
+              <th>Diferença</th>
+              <th>Observação</th>
+            </tr>
+          </thead>
+          <tbody id="resumo-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rodapé -->
+  <footer>
+    <p>
+      Clique em qualquer município (no mapa ou na tabela) para ver os dados já levantados pela pesquisa.
+      Municípios em cinza claro não fazem parte do escopo. Os valores praticados são os fixados em lei
+      municipal para a jornada de referência; a auditoria de folha compara mês a mês o efetivamente pago.
+    </p>
+    <p id="ultima-sync" class="sync-stamp"></p>
+  </footer>
+
+  <!-- ============================================================
+       SCRIPTS (JavaScript)
+       ============================================================
+       ORDEM É IMPORTANTE! Cada arquivo depende do anterior:
+       1. Leaflet (biblioteca externa) — precisa vir primeiro
+       2. config.js — define constantes usadas por todos
+       3. util.js — funções auxiliares usadas por dados, mapa, resumo
+       4. dados.js — busca e organiza dados (usa util.js)
+       5. mapa.js — desenha o mapa (usa dados.js e util.js)
+       6. resumo.js — desenha a tabela (usa dados.js e util.js)
+       7. main.js — orquestra tudo (usa todos os anteriores)
+
+       Se mudar a ordem, o navegador tenta usar algo que ainda
+       não foi carregado, e dá erro.
+  -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/util.js"></script>
+  <script src="js/dados.js"></script>
+  <script src="js/mapa.js"></script>
+  <script src="js/resumo.js"></script>
+  <script src="js/main.js"></script>
+
+</body>
+</html>
