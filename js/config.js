@@ -24,7 +24,7 @@
 // Você também pode passar via URL: ?api=SUA_URL
 // ============================================================
 
-const API_URL_PADRAO = "COLE_AQUI_A_URL_DO_APPS_SCRIPT";
+const API_URL_PADRAO = "https://script.google.com/macros/s/AKfycbyV0PYa9F0pwvqYuLESPy9WN7VnpGbXOJb2CzNzFQZfVRcENEssLornUi2bPuBf3SxKow/exec";
 
 // Pega parâmetros da URL (ex: ?api=OUTRA_URL)
 const _params = new URLSearchParams(window.location.search);
