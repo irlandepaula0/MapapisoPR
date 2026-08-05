@@ -252,10 +252,23 @@ function configurarInteratividade(feature, layer) {
 // ============================================================
 
 // ============================================================
-// textoTooltip(nomeGeo) — Resumo de uma linha ao passar o mouse
+// textoTooltip(nomeGeo) — Resumo ao passar o mouse
 // ============================================================
-// Mostra: nome do município, valor praticado no ano em tela e a
-// distância para o piso nacional daquele ano.
+// A tooltip segue A MESMA ORDEM DE PRIORIDADE que o mapa usa
+// para escolher a cor do município:
+//
+//   1. Auditoria de folha de pagamento (do ano da auditoria em
+//      diante) — é a prova do que foi efetivamente pago.
+//   2. Vencimento fixado em lei municipal.
+//
+// POR QUE ISSO IMPORTA: vários municípios estão em vermelho por
+// causa da auditoria de folha, mas ainda não tiveram a pesquisa
+// legislativa concluída — o campo de valores por ano está vazio.
+// Consultando só a lei, a tooltip dizia "sem valor levantado"
+// num município que o próprio mapa acabara de pintar de
+// vermelho. Quando as duas fontes existem, as duas aparecem:
+// uma mostra o que a norma manda pagar, a outra o que a folha
+// mostra que foi pago.
 // ============================================================
 
 function textoTooltip(nomeGeo) {
@@ -263,26 +276,63 @@ function textoTooltip(nomeGeo) {
   const municipio = resultado.municipio;
 
   if (!municipio) {
-    return "<b>" + escHtml(nomeGeo) + "</b><br><span style=\'color:#5b6572\'>fora do escopo</span>";
+    return '<b>' + escHtml(nomeGeo) + '</b><br>' +
+           '<span class="tt-fraco">fora do escopo da pesquisa</span>';
   }
 
-  const info = situacaoNoAnoOuAnterior(municipio, anoSelecionado);
-  let linha;
+  const linhas = [];
 
-  if (!info) {
-    linha = "sem valor levantado";
-  } else {
+  // --- 1. Auditoria de folha de pagamento ---
+  if (municipio.folha_2025 && anoSelecionado >= ANO_FOLHA) {
+    const folha = municipio.folha_2025;
+
+    if (folhaCumpre(folha)) {
+      linhas.push("Folha " + ANO_FOLHA + ": em conformidade o ano inteiro");
+    } else {
+      const perda = Number(folha.total_perdido);
+      const profissionais = Number(folha.professores_afetados);
+
+      let linha = "Folha " + ANO_FOLHA + ": ";
+      linha += isNaN(perda) || perda <= 0
+        ? "pagamento abaixo do piso"
+        : fmt(perda) + " deixados de pagar";
+
+      if (!isNaN(profissionais) && profissionais > 0) {
+        linha += " · " + profissionais.toLocaleString("pt-BR") +
+                 (profissionais === 1 ? " profissional" : " profissionais");
+      }
+      linhas.push(linha);
+    }
+  }
+
+  // --- 2. Vencimento fixado em lei municipal ---
+  const info = situacaoNoAnoOuAnterior(municipio, anoSelecionado);
+
+  if (info) {
     const dif = diferencaParaPiso(info.valor, info.ano);
     let comparacao = "";
+
     if (dif !== null) {
       if (Math.abs(dif) < 0.005) comparacao = " · no piso";
       else if (dif > 0) comparacao = " · " + fmt(dif) + " acima do piso";
       else comparacao = " · " + fmt(Math.abs(dif)) + " abaixo do piso";
     }
-    linha = fmt(info.valor) + " (" + info.ano + ")" + comparacao;
+
+    linhas.push("Lei " + info.ano + ": " + fmt(info.valor) + comparacao);
+  } else if (linhas.length === 0) {
+    // Nem folha nem lei: é a fila de pesquisa, e a tooltip diz isso
+    // com clareza em vez de sugerir que o dado não existe.
+    linhas.push("Ainda sem valor levantado — pesquisa em andamento");
   }
 
-  return "<b>" + escHtml(municipio.municipio) + "</b><br>" + escHtml(linha);
+  const rotulo = ROTULOS_CLASSE[resultado.classe] || "";
+
+  return '<b>' + escHtml(municipio.municipio) + '</b>' +
+         (rotulo ? '<br><span class="tt-situacao tt-' + resultado.classe + '">' +
+                   escHtml(rotulo) + '</span>' : "") +
+         linhas.map(function(l) {
+           return '<br><span class="tt-linha">' + escHtml(l) + '</span>';
+         }).join("");
 }
 
 function atualizarEstiloMapa() {
