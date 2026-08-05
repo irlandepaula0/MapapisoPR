@@ -268,11 +268,52 @@ function passaFiltros(municipio) {
 }
 
 // ============================================================
-// listaFiltrada() — Municípios do recorte atual, já ordenados
+// grupoGravidade(municipio) — Em que faixa de gravidade ele está
 // ============================================================
-// ORDEM: problema (0) → sem dado (1) → OK (2), alfabética dentro
-// de cada grupo. Quem usa a ferramenta quer ver os PROBLEMAS
-// primeiro: é uma lista de trabalho, não um cadastro.
+// A tabela é uma LISTA DE TRABALHO, não um cadastro: o que exige
+// providência aparece primeiro. As faixas, da mais grave para a
+// menos grave:
+//
+//   0 — Perda apurada em folha de pagamento. É prova documental
+//       de valor devido: é onde a atuação tem lastro mais forte.
+//   1 — Sem auditoria de folha, mas a lei municipal já fixa
+//       vencimento abaixo do piso. Indício forte, ainda sem
+//       quantificação do prejuízo.
+//   2 — Acompanhado, sem nenhum valor levantado ainda. É a fila
+//       de pesquisa.
+//   3 — Em conformidade (por folha auditada ou por lei).
+//
+// Dentro da faixa 0 a ordem é pelo valor perdido, do maior para
+// o menor. Nas outras faixas, alfabética.
+// ============================================================
+
+function grupoGravidade(municipio) {
+  const folha = municipio.folha_2025;
+
+  if (folha && !folhaCumpre(folha)) {
+    return 0;
+  }
+  if (folha && folhaCumpre(folha)) {
+    return 3;
+  }
+
+  const classe = classificarMunicipio(municipio);
+  if (classe === "nao_paga") return 1;
+  if (classe === "sem_dado") return 2;
+  return 3;
+}
+
+// Valor perdido apurado em folha. Zero quando não há auditoria —
+// serve tanto para ordenar quanto para exibir na coluna.
+function perdaApurada(municipio) {
+  const folha = municipio && municipio.folha_2025;
+  if (!folha) return null;
+  const valor = Number(folha.total_perdido);
+  return isNaN(valor) ? null : valor;
+}
+
+// ============================================================
+// listaFiltrada() — Municípios do recorte atual, já ordenados
 // ============================================================
 
 function listaFiltrada() {
@@ -294,15 +335,19 @@ function listaFiltrada() {
     lista.push(municipio);
   });
 
-  const ordemClasse = { nao_paga: 0, sem_dado: 1, paga: 2 };
-
   lista.sort(function(a, b) {
-    const ca = classificarMunicipio(a);
-    const cb = classificarMunicipio(b);
+    const ga = grupoGravidade(a);
+    const gb = grupoGravidade(b);
 
-    if (ordemClasse[ca] !== ordemClasse[cb]) {
-      return ordemClasse[ca] - ordemClasse[cb];
+    if (ga !== gb) return ga - gb;
+
+    // Na faixa de perda apurada, o maior prejuízo vem primeiro
+    if (ga === 0) {
+      const pa = perdaApurada(a) || 0;
+      const pb = perdaApurada(b) || 0;
+      if (pa !== pb) return pb - pa;
     }
+
     return a.municipio.localeCompare(b.municipio, "pt-BR");
   });
 
@@ -321,13 +366,24 @@ function renderResumo() {
   const pisoAno = pisoDoAno(anoSelecionado);
   const houveFiltro = Boolean(filtroBusca || filtroNucleo || filtroSituacao);
 
-  const textoContagem = lista.length === 1
-    ? "1 município no recorte"
-    : lista.length + " municípios no recorte";
+  // Resumo do recorte: quantos municípios e quanto foi apurado neles
+  const comPerda = lista.filter(function(m) {
+    return m.folha_2025 && !folhaCumpre(m.folha_2025);
+  });
+  const perdaRecorte = comPerda.reduce(function(acc, m) {
+    return acc + (perdaApurada(m) || 0);
+  }, 0);
 
-  contagemEl.textContent = textoContagem +
-    (houveFiltro ? " (filtrado)" : "") +
-    " · piso nacional " + anoSelecionado + ": " + fmt(pisoAno);
+  let textoContagem = lista.length + (lista.length === 1 ? " município" : " municípios") +
+    (houveFiltro ? " no recorte filtrado" : " acompanhados");
+
+  if (comPerda.length > 0) {
+    textoContagem += " · " + comPerda.length +
+      (comPerda.length === 1 ? " com perda apurada" : " com perda apurada") +
+      " somando " + fmt(perdaRecorte);
+  }
+
+  contagemEl.textContent = textoContagem;
 
   if (lista.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" class="vazio">' +
@@ -336,29 +392,91 @@ function renderResumo() {
     return;
   }
 
+  // Numeração da faixa mais grave: serve de ordem de prioridade
+  let posicao = 0;
+
   tbody.innerHTML = lista.map(function(municipio) {
     const classe = classificarMunicipio(municipio);
     const ref = valorDeReferencia(municipio);
     const obs = observacaoResumida(municipio);
+    const grupo = grupoGravidade(municipio);
+    const perda = perdaApurada(municipio);
 
     let obsTexto = obs ? escHtml(obs) : "—";
-    if (obs && obs.length > 160) {
-      obsTexto = escHtml(obs.slice(0, 160)) + "…";
+    if (obs && obs.length > 190) {
+      obsTexto = escHtml(obs.slice(0, 190)) + "…";
     }
 
     const pisoComparado = ref.ano ? pisoDoAno(ref.ano) : pisoAno;
 
+    // --- Coluna de ordem de prioridade ---
+    let celulaPos;
+    if (grupo === 0) {
+      posicao++;
+      celulaPos = '<td class="pos-cell"><span class="pos-num">' +
+        String(posicao).padStart(2, "0") + "</span></td>";
+    } else {
+      celulaPos = '<td class="pos-cell"></td>';
+    }
+
+    // --- Coluna de perda apurada, com a barra de proporção ---
+    let celulaPerda;
+    if (municipio.folha_2025 && perda !== null && perda > 0) {
+      const prop = proporcaoIrregular(municipio);
+      const pct = prop * 100;
+      const pctTexto = pct >= 10
+        ? Math.round(pct) + "%"
+        : pct.toFixed(1).replace(".", ",") + "%";
+      const largura = prop > 0 ? Math.max(pct, 1.5) : 0;
+      const atraso = String(municipio.folha_2025.situacao || "").indexOf("ATRASO") !== -1;
+
+      celulaPerda =
+        '<td class="valor-cell perda-cell">' +
+          '<b class="perda-valor">' + fmt(perda) + "</b>" +
+          '<span class="faixa-trilha" title="' + pctTexto +
+            ' dos lançamentos de folha ficaram abaixo do piso">' +
+            '<span class="faixa-preench' + (atraso ? " atraso" : "") +
+              '" style="width:' + largura + '%"></span>' +
+          "</span>" +
+          '<span class="faixa-lbl">' + pctTexto + " dos lançamentos</span>" +
+        "</td>";
+    } else if (municipio.folha_2025) {
+      celulaPerda = '<td class="valor-cell perda-cell"><b class="perda-zero">' +
+        fmt(0) + "</b><span class=\"faixa-lbl\">folha em conformidade</span></td>";
+    } else {
+      celulaPerda = '<td class="valor-cell perda-cell"><span class="sem-auditoria">' +
+        "sem auditoria de folha</span></td>";
+    }
+
+    // --- Coluna de profissionais atingidos ---
+    const professores = municipio.folha_2025
+      ? Number(municipio.folha_2025.professores_afetados) || 0
+      : null;
+    const celulaProf = '<td class="valor-cell">' +
+      (professores === null ? '<span class="sem-auditoria">—</span>'
+                            : professores.toLocaleString("pt-BR")) +
+      "</td>";
+
     return (
-      '<tr data-municipio="' + escHtml(municipio.municipio) + '">' +
-        '<td><b>' + escHtml(municipio.municipio) + '</b></td>' +
-        '<td>' + escHtml(municipio.nucleo || "") + '</td>' +
-        '<td>' + classeBadgeHTML(classe) + '</td>' +
+      '<tr data-municipio="' + escHtml(municipio.municipio) + '"' +
+        (grupo === 0 ? ' class="linha-grave"' : "") + ">" +
+        celulaPos +
+        '<td class="mun-cell"><b>' + escHtml(municipio.municipio) + "</b>" +
+          '<span class="mun-sub">' + escHtml(municipio.nucleo || "") +
+          (municipio.populacao
+            ? " · " + Number(municipio.populacao).toLocaleString("pt-BR") + " hab."
+            : "") +
+          "</span></td>" +
+        "<td>" + classeBadgeHTML(classe) + "</td>" +
+        celulaPerda +
+        celulaProf +
         '<td class="valor-cell">' + ref.texto +
-          ' <span class="nota-ano">' + ref.nota + '</span></td>' +
-        '<td class="valor-cell piso-cell">' + fmt(pisoComparado) + '</td>' +
-        '<td class="valor-cell">' + fmtDif(ref.diferenca) + '</td>' +
-        '<td class="obs-cell">' + obsTexto + '</td>' +
-      '</tr>'
+          '<span class="nota-ano">' + ref.nota + "</span>" +
+          '<span class="dif-linha">' + fmtDif(ref.diferenca) +
+            ' <span class="piso-ref">vs. ' + fmt(pisoComparado) + "</span></span>" +
+        "</td>" +
+        '<td class="obs-cell">' + obsTexto + "</td>" +
+      "</tr>"
     );
   }).join("");
 
@@ -383,20 +501,38 @@ function baixarCSV() {
   const lista = listaFiltrada();
 
   const cabecalho = [
-    "Município", "Núcleo", "Prioridade", "Situação",
+    "Ordem de prioridade", "Município", "Núcleo", "Prioridade", "Situação",
+    "Perda apurada em folha (R$)", "Profissionais atingidos",
+    "Lançamentos de folha", "Lançamentos abaixo do piso", "% abaixo do piso",
     "Ano do valor", "Valor praticado", "Piso do ano", "Diferença",
     "População", "PCCR", "Observação"
   ];
 
+  let posicao = 0;
+
   const linhas = lista.map(function(municipio) {
     const ref = valorDeReferencia(municipio);
     const pisoComparado = ref.ano ? pisoDoAno(ref.ano) : pisoDoAno(anoSelecionado);
+    const folha = municipio.folha_2025;
+    const perda = perdaApurada(municipio);
+
+    if (grupoGravidade(municipio) === 0) posicao++;
+
+    const registros = folha ? Number(folha.total_registros) || 0 : null;
+    const desc = folha ? Number(folha.registros_descumprimento) || 0 : null;
+    const pct = registros ? (desc / registros) * 100 : null;
 
     return [
+      grupoGravidade(municipio) === 0 ? posicao : "",
       municipio.municipio,
       municipio.nucleo || "",
       municipio.prioridade || "",
       ROTULOS_CLASSE[classificarMunicipio(municipio)] || "",
+      perda === null ? "" : perda.toFixed(2).replace(".", ","),
+      folha ? (Number(folha.professores_afetados) || 0) : "",
+      registros === null ? "" : registros,
+      desc === null ? "" : desc,
+      pct === null ? "" : pct.toFixed(2).replace(".", ","),
       ref.ano || "",
       ref.valor === null ? "" : ref.valor.toFixed(2).replace(".", ","),
       pisoComparado === null ? "" : pisoComparado.toFixed(2).replace(".", ","),
