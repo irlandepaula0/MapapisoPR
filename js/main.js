@@ -146,9 +146,7 @@ function computeStats() {
 function atualizarTela() {
   atualizarEstiloMapa();
   computeStats();
-  renderPainelPerdas();
   renderResumo();
-  renderGraficos();
 }
 
 // ============================================================
@@ -338,21 +336,16 @@ async function init() {
     return;
   }
 
-  // --- Painel de perdas, tabela e gráficos ---
-  // Renderizados ANTES do mapa de propósito: nenhum deles depende do
-  // GeoJSON. Se a malha geográfica falhar, o levantamento inteiro já
-  // está na tela — só o mapa fica de fora.
-  renderPainelPerdas();
-  renderResumo();
-  renderGraficos();
-
   // --- Mapa ---
   try {
     await carregarGeoJSON();
     computeStats();
+    renderResumo();
   } catch (erro) {
     console.error("Erro ao carregar o GeoJSON dos municípios:", erro);
-    mostrarErro(`⚠ Os dados carregaram normalmente, mas não foi possível desenhar o mapa (a malha geográfica dos municípios é buscada na internet). Os números, a tabela e os gráficos abaixo continuam válidos.`);
+    mostrarErro(`⚠ Os dados da planilha carregaram, mas houve erro ao desenhar o mapa (GeoJSON). Recarregue a página. Erro: <code>${escHtml(String(erro))}</code>`);
+    // Mesmo sem mapa, a tabela é útil — então ela é renderizada.
+    renderResumo();
   }
 }
 

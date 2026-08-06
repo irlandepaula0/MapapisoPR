@@ -92,15 +92,18 @@ const ALIASES = {
 };
 
 // ============================================================
-// ANO DO LEVANTAMENTO DE FOLHA DE PAGAMENTO
+// ANOS COM AUDITORIA DE FOLHA DE PAGAMENTO
 // ============================================================
-// A auditoria de folha vale para um ano específico. Ela só deve
-// prevalecer sobre o dado legislativo quando o usuário estiver
-// olhando esse ano ou um posterior — caso contrário o mapa
-// mostraria a situação de 2025 em cima de uma consulta de 2022.
+// A planilha tem uma coluna folha_AAAA_json por ano nesta lista
+// (mais recente primeiro). Quando o usuário olha um ano sem
+// auditoria de folha própria, o mapa usa a auditoria mais recente
+// disponível ATÉ aquele ano — do mesmo jeito que já fazia com os
+// dados legislativos (ver situacaoNoAnoOuAnterior em util.js).
+// Pra adicionar um ano novo: criar a coluna na planilha, expor no
+// Code.gs e incluir o ano aqui.
 // ============================================================
 
-const ANO_FOLHA = 2025;
+const ANOS_FOLHA = [2025, 2024, 2023, 2022];
 
 // ============================================================
 // RÓTULOS DE SITUAÇÃO (usados nos filtros e no CSV)

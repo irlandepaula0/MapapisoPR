@@ -166,6 +166,35 @@ function situacaoNoAnoOuAnterior(municipio, anoReferencia) {
 }
 
 // ============================================================
+// folhaNoAnoOuAnterior(municipio, anoReferencia)
+// ============================================================
+// O QUE FAZ: Procura a auditoria de folha mais recente disponível
+// até o ano escolhido — mesma ideia de situacaoNoAnoOuAnterior,
+// mas para os campos municipio.folha_AAAA em vez de municipio.anos.
+//
+// EXEMPLO: anoReferencia = 2025, só existe folha de 2023
+//   - 2025: sem folha → continua
+//   - 2024: sem folha → continua
+//   - 2023: tem folha! → retorna { ano: 2023, folha: {...} }
+//
+// Anos de folha POSTERIORES ao ano em tela nunca entram — não faz
+// sentido usar uma auditoria de 2025 pra classificar uma consulta
+// de 2022.
+// ============================================================
+
+function folhaNoAnoOuAnterior(municipio, anoReferencia) {
+  for (let i = 0; i < ANOS_FOLHA.length; i++) {
+    const ano = ANOS_FOLHA[i];
+    if (ano > anoReferencia) continue;
+    const folha = municipio["folha_" + ano];
+    if (folha) {
+      return { ano: ano, folha: folha };
+    }
+  }
+  return null;
+}
+
+// ============================================================
 // classificarMunicipio(municipio) — Decide a cor do município
 // ============================================================
 // O QUE FAZ: Determina se o município "paga", "nao_paga" ou
@@ -176,16 +205,17 @@ function situacaoNoAnoOuAnterior(municipio, anoReferencia) {
 // usa os dados legislativos como alternativa.
 //
 // REGRAS:
-// 1. Se tem folha de pagamento 2025 → usa ela (prioridade máxima)
+// 1. Se tem folha de pagamento no ano selecionado (ou no ano com
+//    auditoria mais recente até ele) → usa ela (prioridade máxima)
 // 2. Se não tem folha → procura dados legislativos do ano selecionado
 // 3. Se não acha nada → "sem_dado"
 // ============================================================
 
 function classificarMunicipio(municipio) {
-  // Prioridade 1: auditoria de folha de pagamento (dado mais confiável),
-  // mas SÓ quando o ano em tela é o ano da auditoria ou posterior.
-  if (municipio.folha_2025 && anoSelecionado >= ANO_FOLHA) {
-    return folhaCumpre(municipio.folha_2025) ? "paga" : "nao_paga";
+  // Prioridade 1: auditoria de folha de pagamento (dado mais confiável)
+  const folhaInfo = folhaNoAnoOuAnterior(municipio, anoSelecionado);
+  if (folhaInfo) {
+    return folhaCumpre(folhaInfo.folha) ? "paga" : "nao_paga";
   }
   // Prioridade 2: dados legislativos do ano selecionado (ou anterior)
   const info = situacaoNoAnoOuAnterior(municipio, anoSelecionado);
